@@ -57,22 +57,31 @@ async def kick_all_members(cl: Client, m: Message):
                     return
             kick_count = 0
             members_count = chat.members_count
+            # This dictionary stores member IDs and their join timestamps
+            join_times = {}
             if members_count <= 200:
                 async for member in chat.get_members():
                     if member.user.id == cl.me.id:
                         continue
                     elif member.status == ChatMemberStatus.ADMINISTRATOR or member.status == ChatMemberStatus.OWNER:
                         continue
-                    join_date = member.user.date
-                    time_difference = datetime.utcnow() - join_date
-                    if time_difference.total_seconds() > 600:  # Check if the user joined more than 10 minutes ago
-                        try:
-                            await chat.kick_member(member.user.id, until_date=datetime.now() + timedelta(seconds=30))
-                            kick_count += 1
-                        except FloodWait as e:
-                            await asyncio.sleep(e.x)
+                    # Check if join time information is available
+                    if member.user.id not in join_times:
+                        # If not, update the dictionary with current time
+                        join_times[member.user.id] = datetime.now()
+                    else:
+                        # Calculate time difference in seconds
+                        time_diff = (datetime.now() - join_times[member.user.id]).total_seconds()
+                        # Only kick if member has been in the channel for more than 10 minutes
+                        if time_diff > 600:
+                            try:
+                                await chat.ban_member(member.user.id, datetime.now() + timedelta(seconds=30))
+                                kick_count += 1
+                            except FloodWait as e:
+                                await asyncio.sleep(e.value)
                 await m.reply(f"✅ Total Users Removed: {kick_count}")
             else:
+                # Same logic as before, but update join times inside the loop
                 loops_count = members_count / 200
                 loops_count = round(loops_count)
                 for loop_num in range(loops_count):
@@ -81,20 +90,24 @@ async def kick_all_members(cl: Client, m: Message):
                             continue
                         elif member.status == ChatMemberStatus.ADMINISTRATOR or member.status == ChatMemberStatus.OWNER:
                             continue
-                        join_date = member.user.date
-                        time_difference = datetime.utcnow() - join_date
-                        if time_difference.total_seconds() > 600:  # Check if the user joined more than 10 minutes ago
-                            try:
-                                await chat.kick_member(member.user.id, until_date=datetime.now() + timedelta(seconds=30))
-                                kick_count += 1
-                            except FloodWait as e:
-                                await asyncio.sleep(e.x)
+                        if member.user.id not in join_times:
+                            join_times[member.user.id] = datetime.now()
+                        else:
+                            time_diff = (datetime.now() - join_times[member.user.id]).total_seconds()
+                            if time_diff > 600:
+                                try:
+                                    await chat.ban_member(member.user.id, datetime.now() + timedelta(seconds=30))
+                                    kick_count += 1
+                                except FloodWait as e:
+                                    await asyncio.sleep(e.value)
                     await asyncio.sleep(15)
                 await m.reply(f"✅ Total Users Removed: {kick_count}")
         else:
             await m.reply("❌ The bot is admin but does not have the necessary permissions!")
     else:
         await m.reply("❌ The bot must have admin!")
+
+
 
 
 bot.run()
