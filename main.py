@@ -27,9 +27,11 @@ logging.warning("⚡️ Bot Started!")
 async def start_bot(cl: Client, m: Message):
     # ... (unchanged)
 
+
 @bot.on_message(filters.command("help"))
 async def help_bot(_, m: Message):
     # ... (unchanged)
+
 
 @bot.on_message(filters.command("kick_all") & (filters.channel | filters.group))
 async def kick_all_members(cl: Client, m: Message):
