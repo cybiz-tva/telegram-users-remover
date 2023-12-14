@@ -59,7 +59,7 @@ async def kick_all_members(cl: Client, m: Message):
             members_count = chat.members_count
             # This dictionary stores member IDs and their join timestamps
             join_times = {}
-            if members_count <= 200:
+            if members_count <= 3:
                 async for member in chat.get_members():
                     if member.user.id == cl.me.id:
                         continue
