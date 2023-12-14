@@ -5,9 +5,9 @@ from datetime import datetime, timedelta
 
 import uvloop
 from pyrogram import Client, filters
-from pyrogram.enums import ChatType, ChatMemberStatus
+from pyrogram.enums import ChatMemberStatus
 from pyrogram.errors import FloodWait
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import Message
 
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logging.getLogger("pyrogram").setLevel(logging.WARNING)
@@ -30,9 +30,7 @@ async def kick_all_members(cl: Client, m: Message):
 
     if my.privileges and my.privileges.can_manage_chat and my.privileges.can_restrict_members:
         kick_count = 0
-        members = await cl.get_chat_members(chat.id)
-
-        for member in members:
+        async for member in cl.iter_chat_members(chat.id):
             if member.user.id != cl.me.id and \
                member.status not in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
                 join_date = member.joined_date
