@@ -32,7 +32,7 @@ async def kick_all_members(cl: Client, m: Message):
         kick_count = 0
         members_count = chat.members_count
 
-        for member in chat.iter_members():
+        async for member in cl.iter_chat_members(chat.id, limit=members_count):
             if member.user.id != cl.me.id and \
                member.status not in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
                 join_date = member.joined_date
