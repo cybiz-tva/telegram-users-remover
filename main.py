@@ -30,23 +30,24 @@ async def start_bot(cl: Client, m: Message):
                               url=f"tg://resolve?domain={cl.me.username}&startgroup=&admin=manage_chat+restrict_members")],
         [InlineKeyboardButton(text="➕ Add me to a channel",
                               url=f"tg://resolve?domain={cl.me.username}&startchannel&admin=change_info+restrict_members+post_messages")],
-        [InlineKeyboardButton(text="📦 Public Repository", url="https://github.com/samuelmarc/kickallmembersbot")]
+        [InlineKeyboardButton(text=" Public Repository", url="https://github.com/samuelmarc/kickallmembersbot")]
     ])
     await m.reply(
-        f"Hello {m.from_user.mention} I am a bot to remove (not ban) all users from your group or channel created by @samuel_ks, below you can add the bot to your group or channel or access the bot's public repository .",
+        f"Hello {m.from_user.mention} I am a tool to help manage your group or channel. I can remove inactive members who haven't been seen for at least 5 days. To learn more, use the /help command.",
         reply_markup=keyboard)
 
 
 @bot.on_message(filters.command("help"))
 async def help_bot(_, m: Message):
     await m.reply(
-        "Need help? To use the bot it's very simple, just add me to your group or channel as an admin and use the /kick_all command and all users will be removed (not banned).")
+        f"Need help managing your group or channel? I can remove inactive members who haven't been seen for at least 5 days. Just add me as an admin and use the /kick_all command. Remember, I only kick inactive members, not ban them. They can always rejoin later if they become active again. For more information, check the bot's public repository: https://github.com/samuelmarc/kickallmembersbot")
+
 
 @bot.on_message(filters.command("kick_all") & (filters.channel | filters.group))
 async def kick_all_members(cl: Client, m: Message):
     chat = await cl.get_chat(chat_id=m.chat.id)
     my = await chat.get_member(cl.me.id)
-    
+
     if my.privileges:
         if my.privileges.can_manage_chat and my.privileges.can_restrict_members:
             is_channel = True if m.chat.type == ChatType.CHANNEL else False
@@ -55,37 +56,51 @@ async def kick_all_members(cl: Client, m: Message):
                 if req_user_member.privileges is None:
                     await m.reply("❌ You are not an admin and cannot execute this command!")
                     return
-            
+
             kick_count = 0
-            members_count = chat.members_count
+            last_seen_threshold = (datetime.now() - timedelta(days=5)).date()
 
-            # Use get_chat_members with the "recent" filter
-            async for member in cl.get_chat_members(chat.id, filter="recent"):
-                if member.user.id == cl.me.id:
-                    continue
-                elif member.status == ChatMemberStatus.ADMINISTRATOR or member.status == ChatMemberStatus.OWNER:
-                    continue
-                
-                # Check the last time the user has been seen
-                current_date = datetime.now().date()
-                last_seen_date = member.user.last_seen.date()
-                time_diff = (current_date - last_seen_date).days
-                
-                # Kick if the user hasn't been seen for at least 5 days
-                if time_diff >= 5:
-                    try:
-                        await chat.kick_member(member.user.id)
-                        kick_count += 1
-                    except FloodWait as e:
-                        await asyncio.sleep(e.value)
-            
-            await m.reply(f"✅ Total Users Removed: {kick_count}")
-        
+            try:
+                # Use get_chat_members with offsets and limits to iterate within API limitations
+                offset = 0
+                limit = 200
+                while True:
+                    members = await cl.get_chat_members(chat.id, offset=offset, limit=limit, filter="recent")
+                    for member in members:
+                        if member.user.id == cl.me.id:
+                            continue
+                        elif member.status == ChatMemberStatus.ADMINISTRATOR or member.status == ChatMemberStatus.OWNER:
+                            continue
+
+                        current_date = datetime.now().date()
+                        last_seen_date = member.user.last_seen.date()
+                        time_diff = (current_date - last_seen_date).days
+
+                                              if time_diff >= 5:
+                            try:
+                                await chat.kick_member(member.user.id)
+                                kick_count += 1
+                            except FloodWait as e:
+                                await asyncio.sleep(e.value)
+
+                    offset += limit
+                    if len(members) < limit:
+                        break
+
+            except Exception as e:
+                logging.error(f"Error kicking members: {e}")
+                await m.reply(f"❌ An error occurred while kicking members: {e}")
+
+            if kick_count > 0:
+                await m.reply(f"✅ Removed {kick_count} inactive members.")
+            else:
+                await m.reply(f"ℹ️ No inactive members found to remove.")
+
         else:
-            await m.reply("❌ The bot is an admin but does not have the necessary permissions!")
-    else:
-        await m.reply("❌ The bot must have admin!")
+            await m.reply("❌ The bot needs administrator privileges with permission to manage chats and restrict members.")
 
+    else:
+        await m.reply("❌ The bot must be an admin to use this command.")
 
 
 bot.run()
