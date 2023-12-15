@@ -61,7 +61,7 @@ async def kick_all_members(cl: Client, m):
 
             try:
                 # Use iter_chat_members to iterate through members in batches
-                async for member in cl.iter_chat_members(chat.id, filter="recent"):
+                async for member in cl.iter_chat_member(chat.id, filter="recent"):
                     if member.user.id == cl.me.id:
                         continue
                     elif member.status == ChatMemberStatus.ADMINISTRATOR or member.status == ChatMemberStatus.OWNER:
