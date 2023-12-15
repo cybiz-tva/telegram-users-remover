@@ -46,6 +46,8 @@ async def help_bot(_, m: Message):
 
 # ... (previous code)
 
+# ... (previous code)
+
 @bot.on_message(filters.command("kick_all") & (filters.channel | filters.group))
 async def kick_all_members(cl: Client, m: Message):
     chat = await cl.get_chat(chat_id=m.chat.id)
@@ -55,6 +57,8 @@ async def kick_all_members(cl: Client, m: Message):
 
     if my.status in ['administrator', 'member']:
         logging.debug("Bot is recognized as an admin.")
+        logging.debug(f"Bot permissions: {my.can_restrict_members=}, {my.can_change_info=}, {my.can_delete_messages=}")
+
         if my.can_restrict_members:
             logging.debug("Bot has the necessary permissions.")
             is_channel = True if m.chat.type == "channel" else False
@@ -87,9 +91,11 @@ async def kick_all_members(cl: Client, m: Message):
 
                         if time_diff >= 5:
                             try:
-                                logging.debug(f"Attempting to kick member {member.user.id}")
+                                logging.debug(f"Attempting to kick member {member.user.id} ({member.user.username})")
                                 await cl.kick_chat_member(chat.id, member.user.id)
                                 kick_count += 1
+                                # Introduce a small delay between kicks (throttling)
+                                await asyncio.sleep(1)
                             except FloodWait as e:
                                 logging.debug(f"FloodWait: Sleeping for {e.x} seconds")
                                 await asyncio.sleep(e.x)
@@ -112,10 +118,12 @@ async def kick_all_members(cl: Client, m: Message):
 
         else:
             logging.debug("Bot does not have permission to restrict members.")
-            await m.reply("❌ The bot needs permission to restrict members.")
+            await m.reply("❌ The bot needs permission to restrict members. Please check the bot's permissions.")
+            logging.warning(f"Bot permissions: {my.can_restrict_members=}, {my.can_change_info=}, {my.can_delete_messages=}")
 
     else:
         logging.debug("Bot is not recognized as an admin.")
         await m.reply("❌ The bot must be an admin to use this command.")
 
 bot.run()
+
