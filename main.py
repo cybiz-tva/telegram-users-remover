@@ -7,7 +7,6 @@ import uvloop
 from pyrogram import Client, filters
 from pyrogram.enums import ChatType, ChatMemberStatus
 from pyrogram.errors import FloodWait
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logging.getLogger("pyrogram").setLevel(logging.WARNING)
@@ -22,8 +21,9 @@ bot = Client(name="kickmemberbot", api_id=API_ID, api_hash=API_HASH, bot_token=B
 
 logging.warning("⚡️ Bot Started!")
 
+
 @bot.on_message(filters.command("start") & filters.private)
-async def start_bot(cl: Client, m: Message):
+async def start_bot(cl: Client, m):
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton(text="➕ Add me to a group",
                               url=f"tg://resolve?domain={cl.me.username}&startgroup=&admin=manage_chat+restrict_members")],
@@ -35,13 +35,15 @@ async def start_bot(cl: Client, m: Message):
         f"Hello {m.from_user.mention} I am a tool to help manage your group or channel. I can remove inactive members who haven't been seen for at least 5 days. To learn more, use the /help command.",
         reply_markup=keyboard)
 
+
 @bot.on_message(filters.command("help"))
-async def help_bot(_, m: Message):
+async def help_bot(_, m):
     await m.reply(
-        f"Need help managing your group or channel? I can remove inactive members who haven't been seen for at least 5 days. Just add me as an admin and use the /kick_inactive command. Remember, I only kick inactive members, not ban them. They can always rejoin later if they become active again. For more information, check the bot's public repository: https://github.com/cybiz-tva")
+        f"Need help managing your group or channel? I can remove inactive members who haven't been seen for at least 5 days. Just add me as an admin and use the /kick_all command. Remember, I only kick inactive members, not ban them. They can always rejoin later if they become active again. For more information, check the bot's public repository: https://github.com/samuelmarc/kickallmembersbot")
+
 
 @bot.on_message(filters.command("kick_inactive") & (filters.channel | filters.group))
-async def kick_inactive_members(cl: Client, m: Message):
+async def kick_all_members(cl: Client, m):
     chat = await cl.get_chat(chat_id=m.chat.id)
     my = await chat.get_member(cl.me.id)
 
@@ -58,8 +60,8 @@ async def kick_inactive_members(cl: Client, m: Message):
             last_seen_threshold = (datetime.now() - timedelta(days=5)).date()
 
             try:
-                members = await cl.get_chat_members(chat.id, filter="recent")
-                for member in members:
+                # Use iter_chat_members to iterate through members in batches
+                async for member in cl.iter_chat_members(chat.id, filter="recent"):
                     if member.user.id == cl.me.id:
                         continue
                     elif member.status == ChatMemberStatus.ADMINISTRATOR or member.status == ChatMemberStatus.OWNER:
@@ -74,21 +76,22 @@ async def kick_inactive_members(cl: Client, m: Message):
                             await chat.kick_member(member.user.id)
                             kick_count += 1
                         except FloodWait as e:
-                            await asyncio.sleep(e.value)
-
-                if kick_count > 0:
-                    await m.reply(f"✅ Removed {kick_count} inactive members.")
-                else:
-                    await m.reply(f"ℹ️ No inactive members found to remove.")
+                            await asyncio.sleep(e.x)
 
             except Exception as e:
                 logging.error(f"Error kicking members: {e}")
                 await m.reply(f"❌ An error occurred while kicking members: {e}")
+
+            if kick_count > 0:
+                await m.reply(f"✅ Removed {kick_count} inactive members.")
+            else:
+                await m.reply(f"ℹ️ No inactive members found to remove.")
 
         else:
             await m.reply("❌ The bot needs administrator privileges with permission to manage chats and restrict members.")
 
     else:
         await m.reply("❌ The bot must be an admin to use this command.")
+
 
 bot.run()
