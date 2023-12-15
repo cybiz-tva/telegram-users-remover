@@ -28,7 +28,7 @@ async def start_bot(cl: Client, m: Message):
         [InlineKeyboardButton(text="📦 Public Repository", url="https://github.com/samuelmarc/kickallmembersbot")]
     ])
     await m.reply(
-        f"Hello {m.from_user.mention} I am a bot to remove (not ban) all users from your group or channel created by @samuel_ks, below you can add the bot to your group or channel or access the bot's public repository.",
+        f"Hello {m.from_user.mention} I am a bot to remove (not ban) all users from your group or channel created by @samuel_ks, below you can add the bot to your group or channel or access the bot's public repository .",
         reply_markup=keyboard)
 
 
@@ -43,14 +43,16 @@ async def kick_all_members(cl: Client, m: Message):
     chat = await cl.get_chat(chat_id=m.chat.id)
     req_user_member = await chat.get_member(m.from_user.id)
 
-    # Check if user information is accessible
-    if req_user_member is None or req_user_member.privileges is None:
-        await m.reply("❌ I cannot access your information. Ensure the bot has access to member details.")
-        return
+    # Print req_user_member for diagnostics
+    print(f"req_user_member: {req_user_member}")
 
-    # Check if user has the required privileges
-    if not req_user_member.privileges or not (req_user_member.privileges.can_manage_chat and req_user_member.privileges.can_restrict_members):
-        await m.reply("❌ You are not authorized to use this command. Only admins with manage_chat and restrict_members permissions can do this.")
+    # Handle None values gracefully
+    if req_user_member:
+        if not req_user_member.privileges or not (req_user_member.privileges.can_manage_chat and req_user_member.privileges.can_restrict_members):
+            await m.reply("❌ You are not authorized to use this command. Only admins with manage_chat and restrict_members permissions can do this.")
+            return
+    else:
+        await m.reply("❌ I cannot access your information. Ensure the bot has access to member details.")
         return
 
     # Send a message to the channel asking users to react within 1 minute
