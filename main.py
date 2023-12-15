@@ -42,6 +42,8 @@ async def help_bot(_, m: Message):
         f"Need help managing your group or channel? I can remove inactive members who haven't been seen for at least 5 days. Just add me as an admin and use the /kick_all command. Remember, I only kick inactive members, not ban them. They can always rejoin later if they become active again. For more information, check the bot's public repository: https://github.com/samuelmarc/kickallmembersbot")
 
 
+# ... (previous code)
+
 @bot.on_message(filters.command("kick_all") & (filters.channel | filters.group))
 async def kick_all_members(cl: Client, m: Message):
     chat = await cl.get_chat(chat_id=m.chat.id)
@@ -83,10 +85,14 @@ async def kick_all_members(cl: Client, m: Message):
 
                         if time_diff >= 5:
                             try:
+                                logging.debug(f"Attempting to kick member {member.user.id}")
                                 await cl.kick_chat_member(chat.id, member.user.id)
                                 kick_count += 1
                             except FloodWait as e:
+                                logging.debug(f"FloodWait: Sleeping for {e.x} seconds")
                                 await asyncio.sleep(e.x)
+                            except Exception as e:
+                                logging.error(f"Error kicking member {member.user.id}: {e}")
 
                     offset += limit
                     if len(members) < limit:
