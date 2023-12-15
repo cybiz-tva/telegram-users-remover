@@ -46,6 +46,8 @@ async def help_bot(_, m: Message):
 async def kick_all_members(cl: Client, m: Message):
     chat = await cl.get_chat(chat_id=m.chat.id)
     my = await chat.get_member(cl.me.id)
+    
+    print(my)
 
     if my.status == 'administrator':
         if my.can_restrict_members:
