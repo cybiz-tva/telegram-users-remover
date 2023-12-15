@@ -47,65 +47,46 @@ async def help_bot(_, m: Message):
 async def kick_all_members(cl: Client, m: Message):
     chat = await cl.get_chat(chat_id=m.chat.id)
     my = await chat.get_member(cl.me.id)
+    
     if my.privileges:
         if my.privileges.can_manage_chat and my.privileges.can_restrict_members:
             is_channel = True if m.chat.type == ChatType.CHANNEL else False
             if not is_channel:
                 req_user_member = await chat.get_member(m.from_user.id)
                 if req_user_member.privileges is None:
-                    await m.reply("❌ You are not admin and cannot execute this command!")
+                    await m.reply("❌ You are not an admin and cannot execute this command!")
                     return
+            
             kick_count = 0
             members_count = chat.members_count
-            # This dictionary stores member IDs and their join timestamps
-            join_times = {}
-            if members_count <= 200:
-                async for member in chat.get_members():
-                    if member.user.id == cl.me.id:
-                        continue
-                    elif member.status == ChatMemberStatus.ADMINISTRATOR or member.status == ChatMemberStatus.OWNER:
-                        continue
-                    # Check if join time information is available
-                    if member.user.id not in join_times:
-                        # If not, update the dictionary with current time
-                        join_times[member.user.id] = datetime.now()
-                    else:
-                        # Calculate time difference in seconds
-                        time_diff = (datetime.now() - join_times[member.user.id]).total_seconds()
-                        # Only kick if member has been in the channel for more than 10 minutes
-                        if time_diff > 600:
-                            try:
-                                await chat.ban_member(member.user.id, datetime.now() + timedelta(seconds=30))
-                                kick_count += 1
-                            except FloodWait as e:
-                                await asyncio.sleep(e.value)
-                await m.reply(f"✅ Total Users Removed: {kick_count}")
-            else:
-                # Same logic as before, but update join times inside the loop
-                loops_count = members_count / 200
-                loops_count = round(loops_count)
-                for loop_num in range(loops_count):
-                    async for member in chat.get_members():
-                        if member.user.id == cl.me.id:
-                            continue
-                        elif member.status == ChatMemberStatus.ADMINISTRATOR or member.status == ChatMemberStatus.OWNER:
-                            continue
-                        if member.user.id not in join_times:
-                            join_times[member.user.id] = datetime.now()
-                        else:
-                            time_diff = (datetime.now() - join_times[member.user.id]).total_seconds()
-                            if time_diff > 600:
-                                try:
-                                    await chat.ban_member(member.user.id, datetime.now() + timedelta(seconds=30))
-                                    kick_count += 1
-                                except FloodWait as e:
-                                    await asyncio.sleep(e.value)
-                    await asyncio.sleep(15)
-                await m.reply(f"✅ Total Users Removed: {kick_count}")
+
+            for member in chat.iter_members():
+                if member.user.id == cl.me.id:
+                    continue
+                elif member.status == ChatMemberStatus.ADMINISTRATOR or member.status == ChatMemberStatus.OWNER:
+                    continue
+                
+                # Check the last time the user has seen a message
+                last_seen_time = member.last_seen.date
+                current_time = datetime.now()
+                time_diff = (current_time - last_seen_time).total_seconds()
+                
+                # Kick if the user hasn't seen any messages in the last 5 minutes
+                if time_diff > 300:
+                    try:
+                        await chat.kick_member(member.user.id)
+                        kick_count += 1
+                    except FloodWait as e:
+                        await asyncio.sleep(e.value)
+            
+            await m.reply(f"✅ Total Users Removed: {kick_count}")
+        
         else:
-            await m.reply("❌ The bot is admin but does not have the necessary permissions!")
+            await m.reply("❌ The bot is an admin but does not have the necessary permissions!")
     else:
         await m.reply("❌ The bot must have admin!")
+
+
 
 
 
