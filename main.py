@@ -57,6 +57,7 @@ async def kick_all_members(cl: Client, m: Message):
             if not is_channel:
                 req_user_member = await chat.get_member(m.from_user.id)
                 if req_user_member.status not in ["administrator", "creator"]:
+                    logging.debug("User does not have admin or creator status.")
                     await m.reply("❌ You are not an admin or creator and cannot execute this command!")
                     return
 
@@ -69,6 +70,7 @@ async def kick_all_members(cl: Client, m: Message):
                 limit = 200
                 while True:
                     members = await cl.get_chat_members(chat.id, offset=offset, limit=limit)
+                    logging.debug(f"Processing members with offset {offset}")
                     for member in members:
                         if member.user.id == cl.me.id:
                             continue
@@ -88,6 +90,7 @@ async def kick_all_members(cl: Client, m: Message):
 
                     offset += limit
                     if len(members) < limit:
+                        logging.debug("Reached the end of member list.")
                         break
 
                 if kick_count > 0:
@@ -100,9 +103,11 @@ async def kick_all_members(cl: Client, m: Message):
                 await m.reply(f"❌ An error occurred while kicking members: {e}")
 
         else:
+            logging.debug("Bot does not have permission to restrict members.")
             await m.reply("❌ The bot needs permission to restrict members.")
 
     else:
+        logging.debug("Bot is not recognized as an admin.")
         await m.reply("❌ The bot must be an admin to use this command.")
 
 
