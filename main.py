@@ -47,7 +47,7 @@ async def kick_all_members(cl: Client, m: Message):
             is_channel = True if m.chat.type == "channel" else False
             if not is_channel:
                 req_user_member = await chat.get_member(m.from_user.id)
-                if req_user_member.privileges is None:
+                if req_user_member is None or req_user_member.privileges is None:
                     await m.reply("❌ You are not admin and cannot execute this command!")
                     return
 
