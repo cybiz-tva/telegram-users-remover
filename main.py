@@ -47,6 +47,7 @@ async def help_bot(_, m: Message):
 # ... (previous code)
 
 # ... (previous code)
+# ... (previous code)
 
 @bot.on_message(filters.command("kick_all") & (filters.channel | filters.group))
 async def kick_all_members(cl: Client, m: Message):
