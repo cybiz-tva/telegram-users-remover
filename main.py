@@ -60,7 +60,7 @@ async def kick_all_members(cl: Client, m: Message):
             kick_count = 0
             members_count = chat.members_count
 
-            async for member in cl.iter_chat_members(chat.id):
+            for member in chat.iter_members():
                 if member.user.id == cl.me.id:
                     continue
                 elif member.status == ChatMemberStatus.ADMINISTRATOR or member.status == ChatMemberStatus.OWNER:
