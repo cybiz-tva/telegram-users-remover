@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import uvloop
 from pyrogram import Client, filters
 from pyrogram.raw import functions
-from pyrogram.raw.types import UpdateNewMessage, UpdateMessageID
+from pyrogram.raw.types import UpdateNewMessage, UpdateMessageID, UpdateMessageEdited
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -45,36 +45,23 @@ async def react_callback(_, cq):
     await bot.set_database(chat_id, {"tracked_message_id": tracked_message.message_id})
 
 
-@bot.on_raw_reaction_add()
-async def on_reaction_add(client, update, users):
-    message_id = update.message_id
-    chat_id = update.chat_id
-    user_id = users[0]
-
-    # Check if the reaction is on the tracked message
-    tracked_message_id = await client.get_database(chat_id, "tracked_message_id")
-    if message_id == tracked_message_id:
-        # Remove the user or take any other action
-        await remove_user(client, chat_id, user_id)
-
-
-@bot.on_raw_reaction_remove()
-async def on_reaction_remove(client, update, users):
-    message_id = update.message_id
-    chat_id = update.chat_id
-    user_id = users[0]
-
-    # Check if the reaction is on the tracked message
-    tracked_message_id = await client.get_database(chat_id, "tracked_message_id")
-    if message_id == tracked_message_id:
-        # Remove the user or take any other action
-        await remove_user(client, chat_id, user_id)
+@bot.on_raw_update()
+async def on_raw_update(_, update, users, chat_id):
+    if isinstance(update, UpdateMessageID) or isinstance(update, UpdateNewMessage) or isinstance(update, UpdateMessageEdited):
+        if hasattr(update, 'message'):
+            message = update.message
+            if hasattr(message, 'reactions') and len(message.reactions) > 0:
+                for reaction in message.reactions:
+                    if reaction.reaction == TARGET_EMOJI:
+                        user_id = reaction.user_id
+                        # Remove the user or take any other action
+                        await remove_user(chat_id, user_id)
 
 
-async def remove_user(client, chat_id, user_id):
+async def remove_user(chat_id, user_id):
     try:
         # Your code to remove or take action on the user
-        await client.kick_chat_member(chat_id, user_id)
+        await bot.kick_chat_member(chat_id, user_id)
     except Exception as e:
         logging.error(f"Error removing user: {e}")
 
