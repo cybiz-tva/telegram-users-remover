@@ -44,6 +44,8 @@ async def help_bot(_, m: Message):
 
 # ... (previous code)
 
+# ... (previous code)
+
 @bot.on_message(filters.command("kick_all") & (filters.channel | filters.group))
 async def kick_all_members(cl: Client, m: Message):
     chat = await cl.get_chat(chat_id=m.chat.id)
@@ -51,7 +53,7 @@ async def kick_all_members(cl: Client, m: Message):
 
     logging.debug(f"Bot is checking admin status in {chat.title}")
 
-    if my.status == 'administrator':
+    if my.status in ['administrator', 'member']:
         logging.debug("Bot is recognized as an admin.")
         if my.can_restrict_members:
             logging.debug("Bot has the necessary permissions.")
