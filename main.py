@@ -7,7 +7,6 @@ import uvloop
 from pyrogram import Client, filters
 from pyrogram.enums import ChatType, ChatMemberStatus
 from pyrogram.errors import FloodWait
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logging.getLogger("pyrogram").setLevel(logging.WARNING)
@@ -24,7 +23,7 @@ logging.warning("⚡️ Bot Started!")
 
 
 @bot.on_message(filters.command("start") & filters.private)
-async def start_bot(cl: Client, m: Message):
+async def start_bot(cl: Client, m):
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton(text="➕ Add me to a group",
                               url=f"tg://resolve?domain={cl.me.username}&startgroup=&admin=manage_chat+restrict_members")],
@@ -38,13 +37,13 @@ async def start_bot(cl: Client, m: Message):
 
 
 @bot.on_message(filters.command("help"))
-async def help_bot(_, m: Message):
+async def help_bot(_, m):
     await m.reply(
         f"Need help managing your group or channel? I can remove inactive members who haven't been seen for at least 5 days. Just add me as an admin and use the /kick_all command. Remember, I only kick inactive members, not ban them. They can always rejoin later if they become active again. For more information, check the bot's public repository: https://github.com/samuelmarc/kickallmembersbot")
 
 
 @bot.on_message(filters.command("kick_all") & (filters.channel | filters.group))
-async def kick_all_members(cl: Client, m: Message):
+async def kick_all_members(cl: Client, m):
     chat = await cl.get_chat(chat_id=m.chat.id)
     my = await chat.get_member(cl.me.id)
 
@@ -61,33 +60,23 @@ async def kick_all_members(cl: Client, m: Message):
             last_seen_threshold = (datetime.now() - timedelta(days=5)).date()
 
             try:
-                # Use get_chat_members with offsets and limits to iterate within API limitations
-                offset = 0
-                limit = 200
-                while True:
-                    logging.info(f"Offset: {offset}")  # Added logging statement
+                # Use iter_chat_members to iterate through members in batches
+                async for member in cl.iter_chat_members(chat.id, filter="recent"):
+                    if member.user.id == cl.me.id:
+                        continue
+                    elif member.status == ChatMemberStatus.ADMINISTRATOR or member.status == ChatMemberStatus.OWNER:
+                        continue
 
-                    members = await cl.get_chat_members(chat.id, offset=offset, limit=limit, filter="recent")
-                    for member in members:
-                        if member.user.id == cl.me.id:
-                            continue
-                        elif member.status == ChatMemberStatus.ADMINISTRATOR or member.status == ChatMemberStatus.OWNER:
-                            continue
+                    current_date = datetime.now().date()
+                    last_seen_date = member.user.last_seen.date()
+                    time_diff = (current_date - last_seen_date).days
 
-                        current_date = datetime.now().date()
-                        last_seen_date = member.user.last_seen.date()
-                        time_diff = (current_date - last_seen_date).days
-
-                        if time_diff >= 5:
-                            try:
-                                await chat.kick_member(member.user.id)
-                                kick_count += 1
-                            except FloodWait as e:
-                                await asyncio.sleep(e.value)
-
-                    offset += limit
-                    if len(members) <= limit:
-                        break
+                    if time_diff >= 5:
+                        try:
+                            await chat.kick_member(member.user.id)
+                            kick_count += 1
+                        except FloodWait as e:
+                            await asyncio.sleep(e.x)
 
             except Exception as e:
                 logging.error(f"Error kicking members: {e}")
