@@ -60,19 +60,19 @@ async def kick_all_members(cl: Client, m: Message):
             kick_count = 0
             members_count = chat.members_count
 
-            for member in chat.iter_members():
+            async for member in cl.iter_chat_members(chat.id, filter="recent"):
                 if member.user.id == cl.me.id:
                     continue
                 elif member.status == ChatMemberStatus.ADMINISTRATOR or member.status == ChatMemberStatus.OWNER:
                     continue
                 
-                # Check the last time the user has seen a message
-                last_seen_time = member.user.last_seen.date
-                current_time = datetime.now()
-                time_diff = (current_time - last_seen_time).total_seconds()
+                # Check the last time the user has been seen
+                current_date = datetime.now().date()
+                last_seen_date = member.user.last_seen.date()
+                time_diff = (current_date - last_seen_date).days
                 
-                # Kick if the user hasn't seen any messages in the last 5 minutes
-                if time_diff > 300:
+                # Kick if the user hasn't been seen for at least 5 days
+                if time_diff >= 5:
                     try:
                         await chat.kick_member(member.user.id)
                         kick_count += 1
