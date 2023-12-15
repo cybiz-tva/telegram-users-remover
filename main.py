@@ -28,7 +28,7 @@ async def start_bot(cl: Client, m: Message):
         [InlineKeyboardButton(text="📦 Public Repository", url="https://github.com/samuelmarc/kickallmembersbot")]
     ])
     await m.reply(
-        f"Hello {m.from_user.mention} I am a bot to remove (not ban) all users from your group or channel created by @samuel_ks, below you can add the bot to your group or channel or access the bot's public repository .",
+        f"Hello {m.from_user.mention} I am a bot to remove (not ban) all users from your group or channel created by @samuel_ks, below you can add the bot to your group or channel or access the bot's public repository.",
         reply_markup=keyboard)
 
 
@@ -41,34 +41,31 @@ async def help_bot(_, m: Message):
 @bot.on_message(filters.command("kick_all") & (filters.channel | filters.group))
 async def kick_all_members(cl: Client, m: Message):
     chat = await cl.get_chat(chat_id=m.chat.id)
-    my = await chat.get_member(cl.me.id)
-    if my.privileges:
-        if my.privileges.can_manage_chat and my.privileges.can_restrict_members:
-            is_channel = True if m.chat.type == "channel" else False
-            if not is_channel:
-                req_user_member = await chat.get_member(m.from_user.id)
-                if req_user_member is None or req_user_member.privileges is None:
-                    await m.reply("❌ You are not admin and cannot execute this command!")
-                    return
+    req_user_member = await chat.get_member(m.from_user.id)
 
-            # Send a message to the channel asking users to react within 1 minute
-            message = await m.reply("React to this message within 1 minute to stay in the channel!")
+    # Check if user information is accessible
+    if req_user_member is None or req_user_member.privileges is None:
+        await m.reply("❌ I cannot access your information. Ensure the bot has access to member details.")
+        return
 
-            try:
-                # Fetch the message again to get the up-to-date message object
-                message = await cl.get_messages(m.chat.id, message.message_id)
-                reactions = await message.await_reactions(timeout=60)
-                for reaction in reactions:
-                    user_id = reaction.from_user.id
-                    await chat.unban_member(user_id)
-                await m.reply(f"✅ Users who reacted within 1 minute have been kept.")
-            except asyncio.TimeoutError:
-                await m.reply("⚠️ Users who did not react within 1 minute have been removed.")
+    # Check if user has the required privileges
+    if not req_user_member.privileges or not (req_user_member.privileges.can_manage_chat and req_user_member.privileges.can_restrict_members):
+        await m.reply("❌ You are not authorized to use this command. Only admins with manage_chat and restrict_members permissions can do this.")
+        return
 
-        else:
-            await m.reply("❌ The bot is admin but does not have the necessary permissions!")
-    else:
-        await m.reply("❌ The bot must have admin!")
+    # Send a message to the channel asking users to react within 1 minute
+    message = await m.reply("React to this message within 1 minute to stay in the channel!")
+
+    try:
+        # Fetch the message again to get the up-to-date message object
+        message = await cl.get_messages(m.chat.id, message.message_id)
+        reactions = await message.await_reactions(timeout=60)
+        for reaction in reactions:
+            user_id = reaction.from_user.id
+            await chat.unban_member(user_id)
+        await m.reply(f"✅ Users who reacted within 1 minute have been kept.")
+    except asyncio.TimeoutError:
+        await m.reply("⚠️ Users who did not react within 1 minute have been removed.")
 
 
 bot.run()
