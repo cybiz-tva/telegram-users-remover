@@ -76,7 +76,7 @@ async def kick_all_members(cl: Client, m: Message):
                         last_seen_date = member.user.last_seen.date()
                         time_diff = (current_date - last_seen_date).days
 
-                        if time_diff >= 1:
+                        if time_diff >= 5:
                             try:
                                 await chat.kick_member(member.user.id)
                                 kick_count += 1
@@ -84,7 +84,7 @@ async def kick_all_members(cl: Client, m: Message):
                                 await asyncio.sleep(e.value)
 
                     offset += limit
-                    if len(members) < limit:
+                    if len(members) <= limit:  # Corrected condition here
                         break
 
             except Exception as e:
