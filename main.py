@@ -65,6 +65,8 @@ async def kick_all_members(cl: Client, m: Message):
                 offset = 0
                 limit = 200
                 while True:
+                    logging.info(f"Offset: {offset}")  # Added logging statement
+
                     members = await cl.get_chat_members(chat.id, offset=offset, limit=limit, filter="recent")
                     for member in members:
                         if member.user.id == cl.me.id:
@@ -84,7 +86,7 @@ async def kick_all_members(cl: Client, m: Message):
                                 await asyncio.sleep(e.value)
 
                     offset += limit
-                    if len(members) <= limit:  # Corrected condition here
+                    if len(members) <= limit:
                         break
 
             except Exception as e:
