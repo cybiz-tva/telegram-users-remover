@@ -99,7 +99,7 @@ async def kick_all_members(cl: Client, m: Message):
 
 async def has_seen_last_messages(chat, user_id):
     try:
-        messages = await chat.get_messages(limit=3)
+        messages = await chat.get_chat_history(limit=3)
         for message in messages:
             if user_id not in message.views:
                 return False
