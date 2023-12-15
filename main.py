@@ -44,10 +44,6 @@ async def help_bot(_, m: Message):
 
 # ... (previous code)
 
-# ... (previous code)
-
-# ... (previous code)
-# ... (previous code)
 
 @bot.on_message(filters.command("kick_all") & (filters.channel | filters.group))
 async def kick_all_members(cl: Client, m: Message):
@@ -60,7 +56,7 @@ async def kick_all_members(cl: Client, m: Message):
         logging.debug("Bot is recognized as an admin.")
         logging.debug(f"Bot permissions: {my.can_restrict_members=}, {my.can_change_info=}, {my.can_delete_messages=}")
 
-        if my.can_restrict_members:
+        if my.can_restrict_members and my.can_change_info:
             logging.debug("Bot has the necessary permissions.")
             is_channel = True if m.chat.type == "channel" else False
             if not is_channel:
@@ -118,8 +114,8 @@ async def kick_all_members(cl: Client, m: Message):
                 await m.reply(f"❌ An error occurred while kicking members: {e}")
 
         else:
-            logging.debug("Bot does not have permission to restrict members.")
-            await m.reply("❌ The bot needs permission to restrict members. Please check the bot's permissions.")
+            logging.debug("Bot does not have permission to restrict members or change channel info.")
+            await m.reply("❌ The bot needs permission to restrict members and change channel info. Please check the bot's permissions.")
             logging.warning(f"Bot permissions: {my.can_restrict_members=}, {my.can_change_info=}, {my.can_delete_messages=}")
 
     else:
