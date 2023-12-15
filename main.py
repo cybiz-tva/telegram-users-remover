@@ -80,7 +80,7 @@ async def kick_all_members(cl: Client, m):
 
             except Exception as e:
                 logging.error(f"Error kicking members: {e}")
-                await m.reply(f"❌ Channel content inactive")
+                await m.reply(f"❌ An error occurred while kicking members: {e}")
 
             if kick_count > 0:
                 await m.reply(f"✅ Removed {kick_count} inactive members.")
