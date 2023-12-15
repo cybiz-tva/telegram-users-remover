@@ -45,7 +45,7 @@ async def help_bot(_, m: Message):
 # ... (previous code)
 
 
-@bot.on_message(filters.command("kick_all") & (filters.channel | filters.group))
+@bot.on_message(filters.command("kick_inactive") & (filters.channel | filters.group))
 async def kick_all_members(cl: Client, m: Message):
     chat = await cl.get_chat(chat_id=m.chat.id)
     my = await chat.get_member(cl.me.id)
