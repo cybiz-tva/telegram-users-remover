@@ -3,10 +3,7 @@ import logging
 import os
 from datetime import datetime, timedelta
 
-import uvloop
 from pyrogram import Client, filters
-from pyrogram.enums import ChatType, ChatMemberStatus
-from pyrogram.errors import FloodWait
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -15,8 +12,6 @@ logging.getLogger("pyrogram").setLevel(logging.WARNING)
 API_ID = int(os.getenv("API_ID"))
 API_HASH = os.getenv("API_HASH")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-
-uvloop.install()
 
 bot = Client(name="kickmemberbot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
@@ -49,7 +44,7 @@ async def kick_all_members(cl: Client, m: Message):
     my = await chat.get_member(cl.me.id)
     if my.privileges:
         if my.privileges.can_manage_chat and my.privileges.can_restrict_members:
-            is_channel = True if m.chat.type == ChatType.CHANNEL else False
+            is_channel = True if m.chat.type == "channel" else False
             if not is_channel:
                 req_user_member = await chat.get_member(m.from_user.id)
                 if req_user_member.privileges is None:
@@ -60,6 +55,8 @@ async def kick_all_members(cl: Client, m: Message):
             message = await m.reply("React to this message within 1 minute to stay in the channel!")
 
             try:
+                # Fetch the message again to get the up-to-date message object
+                message = await cl.get_messages(m.chat.id, message.message_id)
                 reactions = await message.await_reactions(timeout=60)
                 for reaction in reactions:
                     user_id = reaction.from_user.id
