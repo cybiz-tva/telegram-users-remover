@@ -29,7 +29,7 @@ async def start_bot(cl: Client, m: Message):
                               url=f"tg://resolve?domain={cl.me.username}&startgroup=&admin=manage_chat+restrict_members")],
         [InlineKeyboardButton(text="➕ Add me to a channel",
                               url=f"tg://resolve?domain={cl.me.username}&startchannel&admin=change_info+restrict_members+post_messages")],
-        [InlineKeyboardButton(text=" Public Repository", url="https://github.com/samuelmarc/kickallmembersbot")]
+        [InlineKeyboardButton(text=" Public Repository", url="https://github.com/cybiz-tva")]
     ])
     await m.reply(
         f"Hello {m.from_user.mention} I am a tool to help manage your group or channel. I can remove inactive members who haven't been seen for at least 5 days. To learn more, use the /help command.",
