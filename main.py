@@ -60,14 +60,14 @@ async def kick_all_members(cl: Client, m: Message):
             kick_count = 0
             members_count = chat.members_count
 
-            for member in chat.iter_members():
+            async for member in cl.iter_chat_members(chat.id):
                 if member.user.id == cl.me.id:
                     continue
                 elif member.status == ChatMemberStatus.ADMINISTRATOR or member.status == ChatMemberStatus.OWNER:
                     continue
                 
                 # Check the last time the user has seen a message
-                last_seen_time = member.last_seen.date
+                last_seen_time = member.user.last_seen.date
                 current_time = datetime.now()
                 time_diff = (current_time - last_seen_time).total_seconds()
                 
@@ -85,8 +85,6 @@ async def kick_all_members(cl: Client, m: Message):
             await m.reply("❌ The bot is an admin but does not have the necessary permissions!")
     else:
         await m.reply("❌ The bot must have admin!")
-
-
 
 
 
