@@ -110,5 +110,4 @@ async def kick_all_members(cl: Client, m: Message):
         logging.debug("Bot is not recognized as an admin.")
         await m.reply("❌ The bot must be an admin to use this command.")
 
-
 bot.run()
