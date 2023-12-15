@@ -42,7 +42,6 @@ async def help_bot(_, m: Message):
     await m.reply(
         "Need help? To use the bot it's very simple, just add me to your group or channel as an admin and use the /kick_all command and all users will be removed (not banned).")
 
-
 @bot.on_message(filters.command("kick_all") & (filters.channel | filters.group))
 async def kick_all_members(cl: Client, m: Message):
     chat = await cl.get_chat(chat_id=m.chat.id)
@@ -60,7 +59,8 @@ async def kick_all_members(cl: Client, m: Message):
             kick_count = 0
             members_count = chat.members_count
 
-            async for member in cl.iter_chat_members(chat.id, filter="recent"):
+            # Use get_chat_members with the "recent" filter
+            async for member in cl.get_chat_members(chat.id, filter="recent"):
                 if member.user.id == cl.me.id:
                     continue
                 elif member.status == ChatMemberStatus.ADMINISTRATOR or member.status == ChatMemberStatus.OWNER:
@@ -85,7 +85,6 @@ async def kick_all_members(cl: Client, m: Message):
             await m.reply("❌ The bot is an admin but does not have the necessary permissions!")
     else:
         await m.reply("❌ The bot must have admin!")
-
 
 
 
