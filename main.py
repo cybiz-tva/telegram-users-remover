@@ -40,12 +40,26 @@ async def help_bot(_, m: Message):
 
 @bot.on_message(filters.command("kick_all") & (filters.channel | filters.group))
 async def kick_all_members(cl: Client, m: Message):
-    chat_id = m.chat.id
-    user_id = m.from_user.id
-    print(f"Chat ID: {chat_id}, User ID: {user_id}")
+    # Print message details for diagnosis
+    print(f"Message: {m}")
+    
+    # Check message type
+    if not isinstance(m, Message):
+        await m.reply("❌ Invalid message received. This command only works on text messages.")
+        return
+
+    print(f"Chat: {m.chat}, Text: {m.text}")
 
     try:
-        req_user_member = await chat.get_member(user_id)
+        user_id = m.from_user.id
+    except AttributeError:
+        await m.reply("❌ I cannot access the message sender. Please try again later.")
+        return
+
+    print(f"User ID: {user_id}")
+
+    try:
+        req_user_member = await m.chat.get_member(user_id)
     except Exception as e:
         await m.reply(f"❌ Error accessing member information: {e}")
         return
@@ -58,19 +72,6 @@ async def kick_all_members(cl: Client, m: Message):
         await m.reply("❌ You are not authorized to use this command. Only admins with manage_chat and restrict_members permissions can do this.")
         return
 
-    # Send a message to the channel asking users to react within 1 minute
-    message = await m.reply("React to this message within 1 minute to stay in the channel!")
-
-    try:
-        # Fetch the message again to get the up-to-date message object
-        message = await cl.get_messages(m.chat.id, message.message_id)
-        reactions = await message.await_reactions(timeout=60)
-        for reaction in reactions:
-            user_id = reaction.from_user.id
-            await chat.unban_member(user_id)
-        await m.reply(f"✅ Users who reacted within 1 minute have been kept.")
-    except asyncio.TimeoutError:
-        await m.reply("⚠️ Users who did not react within 1 minute have been removed.")
-
+    # Rest of your code for reaction checks and user removal/unbanning...
 
 bot.run()
