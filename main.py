@@ -8,8 +8,8 @@ from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.errors import FloodWait
 
-logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logging.getLogger("pyrogram").setLevel(logging.WARNING)
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.getLogger("pyrogram").setLevel(logging.DEBUG)
 
 API_ID = int(os.getenv("API_ID"))
 API_HASH = os.getenv("API_HASH")
@@ -47,8 +47,12 @@ async def kick_all_members(cl: Client, m: Message):
     chat = await cl.get_chat(chat_id=m.chat.id)
     my = await chat.get_member(cl.me.id)
 
+    logging.debug(f"Bot is checking admin status in {chat.title}")
+
     if my.status == 'administrator':
+        logging.debug("Bot is recognized as an admin.")
         if my.can_restrict_members:
+            logging.debug("Bot has the necessary permissions.")
             is_channel = True if m.chat.type == "channel" else False
             if not is_channel:
                 req_user_member = await chat.get_member(m.from_user.id)
