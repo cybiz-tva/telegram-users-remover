@@ -40,19 +40,22 @@ async def help_bot(_, m: Message):
 
 @bot.on_message(filters.command("kick_all") & (filters.channel | filters.group))
 async def kick_all_members(cl: Client, m: Message):
-    chat = await cl.get_chat(chat_id=m.chat.id)
-    req_user_member = await chat.get_member(m.from_user.id)
+    chat_id = m.chat.id
+    user_id = m.from_user.id
+    print(f"Chat ID: {chat_id}, User ID: {user_id}")
 
-    # Print req_user_member for diagnostics
-    print(f"req_user_member: {req_user_member}")
+    try:
+        req_user_member = await chat.get_member(user_id)
+    except Exception as e:
+        await m.reply(f"❌ Error accessing member information: {e}")
+        return
 
-    # Handle None values gracefully
-    if req_user_member:
-        if not req_user_member.privileges or not (req_user_member.privileges.can_manage_chat and req_user_member.privileges.can_restrict_members):
-            await m.reply("❌ You are not authorized to use this command. Only admins with manage_chat and restrict_members permissions can do this.")
-            return
-    else:
+    if not req_user_member:
         await m.reply("❌ I cannot access your information. Ensure the bot has access to member details.")
+        return
+
+    if not req_user_member.privileges or not (req_user_member.privileges.can_manage_chat and req_user_member.privileges.can_restrict_members):
+        await m.reply("❌ You are not authorized to use this command. Only admins with manage_chat and restrict_members permissions can do this.")
         return
 
     # Send a message to the channel asking users to react within 1 minute
