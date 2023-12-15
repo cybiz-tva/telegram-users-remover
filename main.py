@@ -5,9 +5,9 @@ from datetime import datetime, timedelta
 
 import uvloop
 from pyrogram import Client, filters
-from pyrogram.enums import ChatType, ChatMemberStatus
-from pyrogram.errors import FloodWait
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.raw import functions
+from pyrogram.raw.types import UpdateNewMessage, UpdateMessageID
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logging.getLogger("pyrogram").setLevel(logging.WARNING)
@@ -15,98 +15,68 @@ logging.getLogger("pyrogram").setLevel(logging.WARNING)
 API_ID = int(os.getenv("API_ID"))
 API_HASH = os.getenv("API_HASH")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+TARGET_EMOJI = "👍"  # Replace with the emoji you want to track
 
 uvloop.install()
 
-bot = Client(name="kickmemberbot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+bot = Client(name="reactiontrackerbot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 logging.warning("⚡️ Bot Started!")
 
 
 @bot.on_message(filters.command("start") & filters.private)
-async def start_bot(cl: Client, m: Message):
+async def start_bot(cl, m):
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton(text="➕ Add me to a group",
-                              url=f"tg://resolve?domain={cl.me.username}&startgroup=&admin=manage_chat+restrict_members")],
-        [InlineKeyboardButton(text="➕ Add me to a channel",
-                              url=f"tg://resolve?domain={cl.me.username}&startchannel&admin=change_info+restrict_members+post_messages")],
-        [InlineKeyboardButton(text="📦 Public Repository", url="https://github.com/samuelmarc/kickallmembersbot")]
+        [InlineKeyboardButton(text="React to this message", callback_data="react")]
     ])
-    await m.reply(
-        f"Hello {m.from_user.mention} I am a bot to remove (not ban) all users from your group or channel created by @samuel_ks, below you can add the bot to your group or channel or access the bot's public repository .",
-        reply_markup=keyboard)
+    await m.reply("Hello! React to the message with the specified emoji to be tracked.", reply_markup=keyboard)
 
 
-@bot.on_message(filters.command("help"))
-async def help_bot(_, m: Message):
-    await m.reply(
-        "Need help? To use the bot it's very simple, just add me to your group or channel as an admin and use the /kick_all command and all users will be removed (not banned).")
+@bot.on_callback_query(filters.regex("react"))
+async def react_callback(_, cq):
+    message = cq.message
+    chat_id = message.chat.id
+    message_id = message.message_id
+
+    # Send the message to be tracked
+    tracked_message = await bot.send_message(chat_id, "This message is being tracked. React to it with the specified emoji.")
+
+    # Store the tracked message ID for future reference
+    await bot.set_database(chat_id, {"tracked_message_id": tracked_message.message_id})
 
 
-@bot.on_message(filters.command("kick_all") & (filters.channel | filters.group))
-async def kick_all_members(cl: Client, m: Message):
-    chat = await cl.get_chat(chat_id=m.chat.id)
-    my = await chat.get_member(cl.me.id)
-    if my.privileges:
-        if my.privileges.can_manage_chat and my.privileges.can_restrict_members:
-            is_channel = True if m.chat.type == ChatType.CHANNEL else False
-            if not is_channel:
-                req_user_member = await chat.get_member(m.from_user.id)
-                if req_user_member.privileges is None:
-                    await m.reply("❌ You are not admin and cannot execute this command!")
-                    return
-            kick_count = 0
-            members_count = chat.members_count
-            if members_count <= 200:
-                async for member in chat.get_members():
-                    if member.user.id == cl.me.id:
-                        continue
-                    elif member.status == ChatMemberStatus.ADMINISTRATOR or member.status == ChatMemberStatus.OWNER:
-                        continue
-                    # Check if the user has seen the last 3 messages
-                    if not await has_seen_last_messages(chat, member.user.id):
-                        continue
-                    try:
-                        await chat.ban_member(member.user.id, datetime.now() + timedelta(seconds=30))
-                        kick_count += 1
-                    except FloodWait as e:
-                        await asyncio.sleep(e.value)
-                await m.reply(f"✅ Total Users Removed: {kick_count}")
-            else:
-                loops_count = members_count / 200
-                loops_count = round(loops_count)
-                for loop_num in range(loops_count):
-                    async for member in chat.get_members():
-                        if member.user.id == cl.me.id:
-                            continue
-                        elif member.status == ChatMemberStatus.ADMINISTRATOR or member.status == ChatMemberStatus.OWNER:
-                            continue
-                        # Check if the user has seen the last 3 messages
-                        if not await has_seen_last_messages(chat, member.user.id):
-                            continue
-                        try:
-                            await chat.ban_member(member.user.id, datetime.now() + timedelta(seconds=30))
-                            kick_count += 1
-                        except FloodWait as e:
-                            await asyncio.sleep(e.value)
-                    await asyncio.sleep(15)
-                await m.reply(f"✅ Total Users Removed: {kick_count}")
-        else:
-            await m.reply("❌ The bot is admin but does not have the necessary permissions!")
-    else:
-        await m.reply("❌ The bot must have admin!")
+@bot.on_raw_reaction_add()
+async def on_reaction_add(client, update, users):
+    message_id = update.message_id
+    chat_id = update.chat_id
+    user_id = users[0]
+
+    # Check if the reaction is on the tracked message
+    tracked_message_id = await client.get_database(chat_id, "tracked_message_id")
+    if message_id == tracked_message_id:
+        # Remove the user or take any other action
+        await remove_user(client, chat_id, user_id)
 
 
-async def has_seen_last_messages(chat, user_id):
+@bot.on_raw_reaction_remove()
+async def on_reaction_remove(client, update, users):
+    message_id = update.message_id
+    chat_id = update.chat_id
+    user_id = users[0]
+
+    # Check if the reaction is on the tracked message
+    tracked_message_id = await client.get_database(chat_id, "tracked_message_id")
+    if message_id == tracked_message_id:
+        # Remove the user or take any other action
+        await remove_user(client, chat_id, user_id)
+
+
+async def remove_user(client, chat_id, user_id):
     try:
-        messages = await chat.get_chat_history(limit=3)
-        for message in messages:
-            if user_id not in message.views:
-                return False
-        return True
+        # Your code to remove or take action on the user
+        await client.kick_chat_member(chat_id, user_id)
     except Exception as e:
-        logging.error(f"Error checking if user has seen last messages: {e}")
-        return False
+        logging.error(f"Error removing user: {e}")
 
 
 bot.run()
