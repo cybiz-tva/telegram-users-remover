@@ -76,7 +76,7 @@ async def kick_all_members(cl: Client, m: Message):
                         last_seen_date = member.user.last_seen.date()
                         time_diff = (current_date - last_seen_date).days
 
-                        if time_diff >= 5:
+                        if time_diff >= 1:
                             try:
                                 await chat.kick_member(member.user.id)
                                 kick_count += 1
