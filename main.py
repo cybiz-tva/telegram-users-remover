@@ -63,6 +63,9 @@ async def kick_all_members(cl: Client, m: Message):
                         continue
                     elif member.status == ChatMemberStatus.ADMINISTRATOR or member.status == ChatMemberStatus.OWNER:
                         continue
+                    # Check if the user has seen the last 3 messages
+                    if not await has_seen_last_messages(chat, member.user.id):
+                        continue
                     try:
                         await chat.ban_member(member.user.id, datetime.now() + timedelta(seconds=30))
                         kick_count += 1
@@ -78,6 +81,9 @@ async def kick_all_members(cl: Client, m: Message):
                             continue
                         elif member.status == ChatMemberStatus.ADMINISTRATOR or member.status == ChatMemberStatus.OWNER:
                             continue
+                        # Check if the user has seen the last 3 messages
+                        if not await has_seen_last_messages(chat, member.user.id):
+                            continue
                         try:
                             await chat.ban_member(member.user.id, datetime.now() + timedelta(seconds=30))
                             kick_count += 1
@@ -89,6 +95,18 @@ async def kick_all_members(cl: Client, m: Message):
             await m.reply("❌ The bot is admin but does not have the necessary permissions!")
     else:
         await m.reply("❌ The bot must have admin!")
+
+
+async def has_seen_last_messages(chat, user_id):
+    try:
+        messages = await chat.get_messages(limit=3)
+        for message in messages:
+            if user_id not in message.views:
+                return False
+        return True
+    except Exception as e:
+        logging.error(f"Error checking if user has seen last messages: {e}")
+        return False
 
 
 bot.run()
