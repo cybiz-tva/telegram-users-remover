@@ -5,9 +5,8 @@ from datetime import datetime, timedelta
 
 import uvloop
 from pyrogram import Client, filters
-from pyrogram.enums import ChatType, ChatMemberStatus
-from pyrogram.errors import FloodWait
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import ChatMemberUpdated
 
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logging.getLogger("pyrogram").setLevel(logging.WARNING)
@@ -49,7 +48,7 @@ async def kick_all_members(cl: Client, m: Message):
     my = await chat.get_member(cl.me.id)
     if my.privileges:
         if my.privileges.can_manage_chat and my.privileges.can_restrict_members:
-            is_channel = True if m.chat.type == ChatType.CHANNEL else False
+            is_channel = True if m.chat.type == 'channel' else False
             if not is_channel:
                 req_user_member = await chat.get_member(m.from_user.id)
                 if req_user_member.privileges is None:
@@ -61,7 +60,7 @@ async def kick_all_members(cl: Client, m: Message):
                 async for member in chat.get_members():
                     if member.user.id == cl.me.id:
                         continue
-                    elif member.status == ChatMemberStatus.ADMINISTRATOR or member.status == ChatMemberStatus.OWNER:
+                    elif member.status in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER):
                         continue
                     try:
                         await chat.ban_member(member.user.id, datetime.now() + timedelta(seconds=30))
@@ -76,7 +75,7 @@ async def kick_all_members(cl: Client, m: Message):
                     async for member in chat.get_members():
                         if member.user.id == cl.me.id:
                             continue
-                        elif member.status == ChatMemberStatus.ADMINISTRATOR or member.status == ChatMemberStatus.OWNER:
+                        elif member.status in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER):
                             continue
                         try:
                             await chat.ban_member(member.user.id, datetime.now() + timedelta(seconds=30))
@@ -96,7 +95,7 @@ async def remove_members(cl: Client, m: Message):
     my = await chat.get_member(cl.me.id)
     if my.privileges:
         if my.privileges.can_manage_chat and my.privileges.can_restrict_members:
-            is_channel = True if m.chat.type == ChatType.CHANNEL else False
+            is_channel = True if m.chat.type == 'channel' else False
             if not is_channel:
                 req_user_member = await chat.get_member(m.from_user.id)
                 if req_user_member.privileges is None:
@@ -124,13 +123,14 @@ async def remove_members(cl: Client, m: Message):
     else:
         await m.reply("❌ The bot must have admin!")
 
-@bot.on_chat_member_join(filters.channel | filters.group)
-async def welcome_message(_, m: Message):
-    chat = m.chat
-    await chat.send_message(WELCOME_MESSAGE, reply_to_message_id=m.message_id)
-
 @bot.on_message(filters.command("welcome") & filters.private)
 async def welcome_command(_, m: Message):
     await m.reply(WELCOME_MESSAGE)
+
+@bot.on_chat_member_updated()
+async def handle_new_member(_, update: ChatMemberUpdated):
+    if update.new_chat_member:
+        chat = update.chat
+        await chat.send_message(WELCOME_MESSAGE, reply_to_message_id=update.message_id)
 
 bot.run()
