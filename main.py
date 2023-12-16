@@ -5,8 +5,7 @@ from datetime import datetime, timedelta
 
 import uvloop
 from pyrogram import Client, filters
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
-from pyrogram.types import ChatMemberUpdated
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, ChatMemberUpdated
 
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logging.getLogger("pyrogram").setLevel(logging.WARNING)
@@ -110,7 +109,12 @@ async def remove_members(cl: Client, m: Message):
             kick_count = 0
             for user_id in user_ids:
                 try:
-                    await chat.ban_member(int(user_id), datetime.now() + timedelta(seconds=30))
+                    user_id = int(user_id)
+                    user_to_remove = await chat.get_member(user_id)
+                    if not user_to_remove or user_to_remove.status in ('administrator', 'owner'):
+                        await m.reply(f"❌ Unable to remove user with ID {user_id}.")
+                        continue
+                    await chat.ban_member(user_id, datetime.now() + timedelta(seconds=30))
                     kick_count += 1
                 except FloodWait as e:
                     await asyncio.sleep(e.value)
@@ -124,13 +128,14 @@ async def remove_members(cl: Client, m: Message):
         await m.reply("❌ The bot must have admin!")
 
 @bot.on_message(filters.command("welcome") & filters.private)
-async def welcome_command(_, m: Message):
-    await m.reply(WELCOME_MESSAGE)
+async def set_welcome_message(_, m: Message):
+    global WELCOME_MESSAGE
+    WELCOME_MESSAGE = m.text.split(maxsplit=1)[1]
+    await m.reply(f"✅ Welcome message set successfully:\n{WELCOME_MESSAGE}")
 
-@bot.on_chat_member_updated()
-async def handle_new_member(_, update: ChatMemberUpdated):
-    if update.new_chat_member:
-        chat = update.chat
-        await chat.send_message(WELCOME_MESSAGE, reply_to_message_id=update.message_id)
+@bot.on_chat_member_join(filters.channel | filters.group)
+async def welcome_new_member(cl: Client, m: Message):
+    if WELCOME_MESSAGE:
+        await m.reply(WELCOME_MESSAGE)
 
 bot.run()
