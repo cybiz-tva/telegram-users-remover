@@ -133,9 +133,9 @@ async def set_welcome_message(_, m: Message):
     WELCOME_MESSAGE = m.text.split(maxsplit=1)[1]
     await m.reply(f"✅ Welcome message set successfully:\n{WELCOME_MESSAGE}")
 
-@bot.on_chat_member_join(filters.channel | filters.group)
-async def welcome_new_member(cl: Client, m: Message):
-    if WELCOME_MESSAGE:
+@bot.on_chat_member_updated()
+async def welcome_new_member(_, m: ChatMemberUpdated):
+    if WELCOME_MESSAGE and m.new_chat_member and m.new_chat_member.user.id == bot.get_me().id:
         await m.reply(WELCOME_MESSAGE)
 
 bot.run()
