@@ -30,10 +30,10 @@ async def start_bot(cl: Client, m: Message):
                               url=f"tg://resolve?domain={cl.me.username}&startgroup=&admin=manage_chat+restrict_members")],
         [InlineKeyboardButton(text="➕ Add me to a channel",
                               url=f"tg://resolve?domain={cl.me.username}&startchannel&admin=change_info+restrict_members+post_messages")],
-        [InlineKeyboardButton(text="📦 Public Repository", url="https://github.com/samuelmarc/kickallmembersbot")]
+        [InlineKeyboardButton(text="📦 Public Repository", url="https://github.com/cybiz-tva")]
     ])
     await m.reply(
-        f"Hello {m.from_user.mention} I am a bot to remove (not ban) all users from your group or channel created by @samuel_ks, below you can add the bot to your group or channel or access the bot's public repository.",
+        f"Hello {m.from_user.mention} I am a bot to remove (not ban) all users from your group or channel created by cybiz, below you can add the bot to your group or channel or access the bot's public repository.",
         reply_markup=keyboard)
 
 
