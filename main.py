@@ -33,7 +33,7 @@ async def start_bot(cl: Client, m: Message):
         [InlineKeyboardButton(text="📦 Public Repository", url="https://github.com/samuelmarc/kickallmembersbot")]
     ])
     await m.reply(
-        f"Hello {m.from_user.mention} I am a bot to remove (not ban) all users from your group or channel created by @samuel_ks, below you can add the bot to your group or channel or access the bot's public repository .",
+        f"Hello {m.from_user.mention} I am a bot to remove (not ban) all users from your group or channel created by @samuel_ks, below you can add the bot to your group or channel or access the bot's public repository.",
         reply_markup=keyboard)
 
 
@@ -112,7 +112,7 @@ async def remove_members(cl: Client, m: Message):
             kick_count = 0
             for user_id in user_ids:
                 try:
-                    await chat.kick_member(int(user_id))
+                    await cl.kick_chat_member(chat.id, int(user_id))
                     kick_count += 1
                 except FloodWait as e:
                     await asyncio.sleep(e.value)
