@@ -22,6 +22,8 @@ bot = Client(name="kickmemberbot", api_id=API_ID, api_hash=API_HASH, bot_token=B
 
 logging.warning("⚡️ Bot Started!")
 
+# Welcome message
+WELCOME_MESSAGE = "Welcome to the channel! Thank you for joining."
 
 @bot.on_message(filters.command("start") & filters.private)
 async def start_bot(cl: Client, m: Message):
@@ -36,12 +38,10 @@ async def start_bot(cl: Client, m: Message):
         f"Hello {m.from_user.mention} I am a bot to remove (not ban) all users from your group or channel created by @samuel_ks, below you can add the bot to your group or channel or access the bot's public repository.",
         reply_markup=keyboard)
 
-
 @bot.on_message(filters.command("help"))
 async def help_bot(_, m: Message):
     await m.reply(
         "Need help? To use the bot it's very simple, just add me to your group or channel as an admin and use the /kick_all command and all users will be removed (not banned).")
-
 
 @bot.on_message(filters.command("kick_all") & (filters.channel | filters.group))
 async def kick_all_members(cl: Client, m: Message):
@@ -90,7 +90,6 @@ async def kick_all_members(cl: Client, m: Message):
     else:
         await m.reply("❌ The bot must have admin!")
 
-
 @bot.on_message(filters.command("remove") & (filters.channel | filters.group))
 async def remove_members(cl: Client, m: Message):
     chat = await cl.get_chat(chat_id=m.chat.id)
@@ -125,5 +124,13 @@ async def remove_members(cl: Client, m: Message):
     else:
         await m.reply("❌ The bot must have admin!")
 
+@bot.on_chat_member_join(filters.channel | filters.group)
+async def welcome_message(_, m: Message):
+    chat = m.chat
+    await chat.send_message(WELCOME_MESSAGE, reply_to_message_id=m.message_id)
+
+@bot.on_message(filters.command("welcome") & filters.private)
+async def welcome_command(_, m: Message):
+    await m.reply(WELCOME_MESSAGE)
 
 bot.run()
