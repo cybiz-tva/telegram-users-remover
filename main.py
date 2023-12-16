@@ -51,7 +51,7 @@ async def kick_all_members(cl: Client, m: Message):
             is_channel = True if m.chat.type == 'channel' else False
             if not is_channel:
                 req_user_member = await chat.get_member(m.from_user.id)
-                if req_user_member.privileges is None:
+                if req_user_member is None or req_user_member.privileges is None:
                     await m.reply("❌ You are not an admin and cannot execute this command!")
                     return
             kick_count = 0
@@ -60,7 +60,7 @@ async def kick_all_members(cl: Client, m: Message):
                 async for member in chat.get_members():
                     if member.user.id == cl.me.id:
                         continue
-                    elif member.status in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER):
+                    elif member.status in ('administrator', 'owner'):
                         continue
                     try:
                         await chat.ban_member(member.user.id, datetime.now() + timedelta(seconds=30))
@@ -75,7 +75,7 @@ async def kick_all_members(cl: Client, m: Message):
                     async for member in chat.get_members():
                         if member.user.id == cl.me.id:
                             continue
-                        elif member.status in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER):
+                        elif member.status in ('administrator', 'owner'):
                             continue
                         try:
                             await chat.ban_member(member.user.id, datetime.now() + timedelta(seconds=30))
@@ -98,7 +98,7 @@ async def remove_members(cl: Client, m: Message):
             is_channel = True if m.chat.type == 'channel' else False
             if not is_channel:
                 req_user_member = await chat.get_member(m.from_user.id)
-                if req_user_member.privileges is None:
+                if req_user_member is None or req_user_member.privileges is None:
                     await m.reply("❌ You are not an admin and cannot execute this command!")
                     return
 
