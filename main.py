@@ -5,7 +5,9 @@ from datetime import datetime, timedelta
 
 import uvloop
 from pyrogram import Client, filters
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, ChatMemberUpdated
+from pyrogram.enums import ChatType, ChatMemberStatus
+from pyrogram.errors import FloodWait
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logging.getLogger("pyrogram").setLevel(logging.WARNING)
@@ -20,8 +22,6 @@ bot = Client(name="kickmemberbot", api_id=API_ID, api_hash=API_HASH, bot_token=B
 
 logging.warning("⚡️ Bot Started!")
 
-# Welcome message
-WELCOME_MESSAGE = "Welcome to the channel! Thank you for joining."
 
 @bot.on_message(filters.command("start") & filters.private)
 async def start_bot(cl: Client, m: Message):
@@ -36,10 +36,12 @@ async def start_bot(cl: Client, m: Message):
         f"Hello {m.from_user.mention} I am a bot to remove (not ban) all users from your group or channel created by @samuel_ks, below you can add the bot to your group or channel or access the bot's public repository.",
         reply_markup=keyboard)
 
+
 @bot.on_message(filters.command("help"))
 async def help_bot(_, m: Message):
     await m.reply(
         "Need help? To use the bot it's very simple, just add me to your group or channel as an admin and use the /kick_all command and all users will be removed (not banned).")
+
 
 @bot.on_message(filters.command("kick_all") & (filters.channel | filters.group))
 async def kick_all_members(cl: Client, m: Message):
@@ -47,10 +49,10 @@ async def kick_all_members(cl: Client, m: Message):
     my = await chat.get_member(cl.me.id)
     if my.privileges:
         if my.privileges.can_manage_chat and my.privileges.can_restrict_members:
-            is_channel = True if m.chat.type == 'channel' else False
+            is_channel = True if m.chat.type == ChatType.CHANNEL else False
             if not is_channel:
                 req_user_member = await chat.get_member(m.from_user.id)
-                if req_user_member is None or req_user_member.privileges is None:
+                if req_user_member.privileges is None:
                     await m.reply("❌ You are not an admin and cannot execute this command!")
                     return
             kick_count = 0
@@ -59,7 +61,7 @@ async def kick_all_members(cl: Client, m: Message):
                 async for member in chat.get_members():
                     if member.user.id == cl.me.id:
                         continue
-                    elif member.status in ('administrator', 'owner'):
+                    elif member.status == ChatMemberStatus.ADMINISTRATOR or member.status == ChatMemberStatus.OWNER:
                         continue
                     try:
                         await chat.ban_member(member.user.id, datetime.now() + timedelta(seconds=30))
@@ -74,7 +76,7 @@ async def kick_all_members(cl: Client, m: Message):
                     async for member in chat.get_members():
                         if member.user.id == cl.me.id:
                             continue
-                        elif member.status in ('administrator', 'owner'):
+                        elif member.status == ChatMemberStatus.ADMINISTRATOR or member.status == ChatMemberStatus.OWNER:
                             continue
                         try:
                             await chat.ban_member(member.user.id, datetime.now() + timedelta(seconds=30))
@@ -88,16 +90,17 @@ async def kick_all_members(cl: Client, m: Message):
     else:
         await m.reply("❌ The bot must have admin!")
 
+
 @bot.on_message(filters.command("remove") & (filters.channel | filters.group))
 async def remove_members(cl: Client, m: Message):
     chat = await cl.get_chat(chat_id=m.chat.id)
     my = await chat.get_member(cl.me.id)
     if my.privileges:
         if my.privileges.can_manage_chat and my.privileges.can_restrict_members:
-            is_channel = True if m.chat.type == 'channel' else False
+            is_channel = True if m.chat.type == ChatType.CHANNEL else False
             if not is_channel:
                 req_user_member = await chat.get_member(m.from_user.id)
-                if req_user_member is None or req_user_member.privileges is None:
+                if req_user_member.privileges is None:
                     await m.reply("❌ You are not an admin and cannot execute this command!")
                     return
 
@@ -109,12 +112,7 @@ async def remove_members(cl: Client, m: Message):
             kick_count = 0
             for user_id in user_ids:
                 try:
-                    user_id = int(user_id)
-                    user_to_remove = await chat.get_member(user_id)
-                    if not user_to_remove or user_to_remove.status in ('administrator', 'owner'):
-                        await m.reply(f"❌ Unable to remove user with ID {user_id}.")
-                        continue
-                    await chat.ban_member(user_id, datetime.now() + timedelta(seconds=30))
+                    await chat.ban_member(int(user_id), datetime.now() + timedelta(seconds=30))
                     kick_count += 1
                 except FloodWait as e:
                     await asyncio.sleep(e.value)
@@ -127,15 +125,5 @@ async def remove_members(cl: Client, m: Message):
     else:
         await m.reply("❌ The bot must have admin!")
 
-@bot.on_message(filters.command("welcome") & filters.private)
-async def set_welcome_message(_, m: Message):
-    global WELCOME_MESSAGE
-    WELCOME_MESSAGE = m.text.split(maxsplit=1)[1]
-    await m.reply(f"✅ Welcome message set successfully:\n{WELCOME_MESSAGE}")
-
-@bot.on_chat_member_updated()
-async def welcome_new_member(_, m: ChatMemberUpdated):
-    if WELCOME_MESSAGE and m.new_chat_member and m.new_chat_member.user.id == bot.get_me().id:
-        await m.reply(WELCOME_MESSAGE)
 
 bot.run()
