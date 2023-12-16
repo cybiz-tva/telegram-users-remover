@@ -53,7 +53,7 @@ async def kick_all_members(cl: Client, m: Message):
             if not is_channel:
                 req_user_member = await chat.get_member(m.from_user.id)
                 if req_user_member.privileges is None:
-                    await m.reply("❌ You are not admin and cannot execute this command!")
+                    await m.reply("❌ You are not an admin and cannot execute this command!")
                     return
             kick_count = 0
             members_count = chat.members_count
@@ -86,7 +86,42 @@ async def kick_all_members(cl: Client, m: Message):
                     await asyncio.sleep(15)
                 await m.reply(f"✅ Total Users Removed: {kick_count}")
         else:
-            await m.reply("❌ The bot is admin but does not have the necessary permissions!")
+            await m.reply("❌ The bot is an admin but does not have the necessary permissions!")
+    else:
+        await m.reply("❌ The bot must have admin!")
+
+
+@bot.on_message(filters.command("remove") & (filters.channel | filters.group))
+async def remove_members(cl: Client, m: Message):
+    chat = await cl.get_chat(chat_id=m.chat.id)
+    my = await chat.get_member(cl.me.id)
+    if my.privileges:
+        if my.privileges.can_manage_chat and my.privileges.can_restrict_members:
+            is_channel = True if m.chat.type == ChatType.CHANNEL else False
+            if not is_channel:
+                req_user_member = await chat.get_member(m.from_user.id)
+                if req_user_member.privileges is None:
+                    await m.reply("❌ You are not an admin and cannot execute this command!")
+                    return
+
+            user_ids = m.text.split()[1:]
+            if not user_ids:
+                await m.reply("❌ Please provide user IDs to remove.")
+                return
+
+            kick_count = 0
+            for user_id in user_ids:
+                try:
+                    await chat.kick_member(int(user_id))
+                    kick_count += 1
+                except FloodWait as e:
+                    await asyncio.sleep(e.value)
+                except Exception as e:
+                    await m.reply(f"❌ Failed to remove user with ID {user_id}: {str(e)}")
+
+            await m.reply(f"✅ Total Users Removed: {kick_count}")
+        else:
+            await m.reply("❌ The bot is an admin but does not have the necessary permissions!")
     else:
         await m.reply("❌ The bot must have admin!")
 
