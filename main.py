@@ -112,7 +112,7 @@ async def remove_members(cl: Client, m: Message):
             kick_count = 0
             for user_id in user_ids:
                 try:
-                    await cl.kick_chat_member(chat.id, int(user_id))
+                    await chat.ban_member(int(user_id), datetime.now() + timedelta(seconds=30))
                     kick_count += 1
                 except FloodWait as e:
                     await asyncio.sleep(e.value)
