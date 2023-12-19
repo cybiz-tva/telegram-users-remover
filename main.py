@@ -7,7 +7,7 @@ from datetime import datetime
 
 # Get sensitive information from environment variables
 TOKEN = os.environ.get('5999713069:AAFYhnSI-79OCEEsnQL98K581QkUePq6T-8')
-CREDENTIALS_JSON_PATH = os.environ.get('GOOGLE_SHEETS_CREDENTIALS_PATH')
+CREDENTIALS_JSON_PATH = os.environ.get('mikfxdatabase-965088f7d3f9.json')
 
 bot = telebot.TeleBot(TOKEN)
 
