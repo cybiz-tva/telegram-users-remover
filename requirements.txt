@@ -3,3 +3,4 @@ TgCrypto==1.2.5
 uvloop==0.19.0
 telebot
 gspread
+oauth2client
