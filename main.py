@@ -1,123 +1,129 @@
-import asyncio
-import logging
-import os
-from datetime import datetime, timedelta
-import sys
+import telebot
+import re
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+from datetime import datetime
 
-# Add the parent directory to the Python path
-sys.path.append('..')
+# Replace with your Telegram bot token
+TOKEN = '5999713069:AAFYhnSI-79OCEEsnQL98K581QkUePq6T-8'
 
-from telegram_bot_api.app.mjs import ban_chat_member
-from pyrogram import Client, filters
-from pyrogram.enums import ChatType, ChatMemberStatus
-from pyrogram.errors import FloodWait
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+bot = telebot.TeleBot(TOKEN)
 
-logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logging.getLogger("pyrogram").setLevel(logging.WARNING)
+# Create an empty dictionary to store user responses
+user_data = {}
 
-API_ID = int(os.getenv("API_ID"))
-API_HASH = os.getenv("API_HASH")
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+# Replace with the path to your Google Sheets credentials JSON file
+CREDENTIALS_JSON_PATH = 'D:/Downloads/mikfxdatabase-965088f7d3f9.json'
 
-bot = Client(name="kickmemberbot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+# URLs for images
+WELCOME_IMAGE_URL = 'https://ibb.co/zXdD7M0'
+SUCCESS_IMAGE_URL = 'https://ibb.co/m9C7h29'
+INVALID_INPUT_IMAGE_URL = 'https://ibb.co/VHrqD1Y'
+SUBMIT_EXNESS_ID_IMAGE_URL = 'https://ibb.co/ykbqh4n'
+SUBMIT_MOBILE_NUMBER_IMAGE_URL = 'https://ibb.co/rvZYJ76'
 
-logging.warning("⚡️ Bot Started!")
+@bot.message_handler(commands=['start'])
+def handle_start(message):
+    user_id = message.from_user.id
+    user_data[user_id] = {}  # Initialize user data dictionary for the user
 
-@bot.on_message(filters.command("start") & filters.private)
-async def start_bot(cl: Client, m: Message):
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton(text="➕ Add me to a group",
-                              url=f"tg://resolve?domain={cl.me.username}&startgroup=&admin=manage_chat+restrict_members")],
-        [InlineKeyboardButton(text="➕ Add me to a channel",
-                              url=f"tg://resolve?domain={cl.me.username}&startchannel&admin=change_info+restrict_members+post_messages")],
-        [InlineKeyboardButton(text="📦 Public Repository", url="https://github.com/cybiz-tva")]
-    ])
-    await m.reply(
-        f"Hello {m.from_user.mention} I am a bot to remove (not ban) all users from your group or channel created by cybiz, below you can add the bot to your group or channel or access the bot's public repository.",
-        reply_markup=keyboard)
+    # Get user details (name, username, user ID)
+    name = message.from_user.first_name
+    username = message.from_user.username
+    user_data[user_id]['name'] = name
+    user_data[user_id]['username'] = username
+    user_data[user_id]['user_id'] = user_id
 
-@bot.on_message(filters.command("help"))
-async def help_bot(_, m: Message):
-    await m.reply(
-        "Need help? To use the bot it's very simple, just add me to your group or channel as an admin and use the /kick_all command and all users will be removed (not banned).")
+    # Send welcome message with image
+    bot.send_photo(user_id, WELCOME_IMAGE_URL, caption=f"Welcome, {name}! Click on the button to submit your details:",
+                   reply_markup=create_submit_button())
 
-@bot.on_message(filters.command("kick_all") & (filters.channel | filters.group))
-async def kick_all_members(cl: Client, m: Message):
-    chat = await cl.get_chat(chat_id=m.chat.id)
-    my = await chat.get_member(cl.me.id)
-    if my.privileges:
-        if my.privileges.can_manage_chat and my.privileges.can_restrict_members:
-            is_channel = True if m.chat.type == ChatType.CHANNEL else False
-            if not is_channel:
-                req_user_member = await chat.get_member(m.from_user.id)
-                if req_user_member.privileges is None:
-                    await m.reply("❌ You are not an admin and cannot execute this command!")
-                    return
-            kick_count = 0
-            members_count = chat.members_count
-            if members_count <= 200:
-                async for member in chat.get_members():
-                    if member.user.id == cl.me.id:
-                        continue
-                    elif member.status == ChatMemberStatus.ADMINISTRATOR or member.status == ChatMemberStatus.OWNER:
-                        continue
-                    try:
-                        await ban_chat_member(cl, chat, member.user.id)
-                        kick_count += 1
-                    except FloodWait as e:
-                        await asyncio.sleep(e.value)
-                await m.reply(f"✅ Total Users Removed: {kick_count}")
-            else:
-                loops_count = members_count / 200
-                loops_count = round(loops_count)
-                for loop_num in range(loops_count):
-                    async for member in chat.get_members():
-                        if member.user.id == cl.me.id:
-                            continue
-                        elif member.status == ChatMemberStatus.ADMINISTRATOR or member.status == ChatMemberStatus.OWNER:
-                            continue
-                        try:
-                            await ban_chat_member(cl, chat, member.user.id)
-                            kick_count += 1
-                        except FloodWait as e:
-                            await asyncio.sleep(e.value)
-                    await asyncio.sleep(15)
-                await m.reply(f"✅ Total Users Removed: {kick_count}")
+@bot.callback_query_handler(func=lambda call: True)
+def callback_handler(call):
+    user_id = call.from_user.id
+    chat_id = call.message.chat.id
+
+    if call.data == "submit_button":
+        bot.send_photo(chat_id, SUBMIT_MOBILE_NUMBER_IMAGE_URL, caption="Submit your mobile number (digits only):")
+        bot.register_next_step_handler(call.message, get_mobile_number)
+
+    elif call.data == "submit_exness_id_button":
+        bot.send_photo(chat_id, SUBMIT_EXNESS_ID_IMAGE_URL, caption="Submit your Exness ID (digits only):")
+        bot.register_next_step_handler(call.message, get_exness_id)
+
+def create_submit_button():
+    markup = telebot.types.InlineKeyboardMarkup(row_width=1)
+    button_submit = telebot.types.InlineKeyboardButton("Submit", callback_data="submit_button")
+    markup.add(button_submit)
+    return markup
+
+def get_mobile_number(message):
+    user_id = message.from_user.id
+    chat_id = message.chat.id
+
+    if 'mobile_number' not in user_data[user_id]:
+        if re.match(r"^\d+$", message.text):  # Check if the input is digits only
+            user_data[user_id]['mobile_number'] = message.text
+            bot.send_photo(chat_id, SUBMIT_EXNESS_ID_IMAGE_URL, caption="Submit your Exness ID (digits only):",
+                           reply_markup=create_submit_exness_id_button())
+            bot.register_next_step_handler(message, get_exness_id)
         else:
-            await m.reply("❌ The bot is an admin but does not have the necessary permissions!")
-    else:
-        await m.reply("❌ The bot must have admin!")
+            send_invalid_input_message(chat_id)
+            bot.register_next_step_handler(message, get_mobile_number)
 
-@bot.on_message(filters.command("remove") & (filters.channel | filters.group))
-async def remove_members(cl: Client, m: Message):
-    chat = await cl.get_chat(chat_id=m.chat.id)
-    my = await chat.get_member(cl.me.id)
-    if my.privileges:
-        if my.privileges.can_manage_chat and my.privileges.can_restrict_members:
-            is_channel = True if m.chat.type == ChatType.CHANNEL else False
-            if not is_channel:
-                req_user_member = await chat.get_member(m.from_user.id)
-                if req_user_member.privileges is None:
-                    await m.reply("❌ You are not an admin and cannot execute this command!")
-                    return
+def create_submit_exness_id_button():
+    markup = telebot.types.InlineKeyboardMarkup(row_width=1)
+    button_submit_exness_id = telebot.types.InlineKeyboardButton("Submit Exness ID", callback_data="submit_exness_id_button")
+    markup.add(button_submit_exness_id)
+    return markup
 
-            user_ids = m.text.split()[1:]
-            if not user_ids:
-                await m.reply("❌ Please provide user IDs to remove.")
-                return
+def get_exness_id(message):
+    user_id = message.from_user.id
+    chat_id = message.chat.id
 
-            kick_count = 0
-            for user_id in user_ids:
-                try:
-                    await ban_chat_member(cl, chat, int(user_id))
-                    kick_count += 1
-                except FloodWait as e:
-                    await asyncio.sleep(e.value)
-                except Exception as e:
-                    await m.reply(f"❌ Failed to remove user with ID {user_id}: {str(e)}")
+    if 'exness_id' not in user_data[user_id]:
+        if re.match(r"^\d+$", message.text):  # Check if the input is digits only
+            user_data[user_id]['exness_id'] = message.text
 
-            await m.reply(f"✅ Total Users Removed: {kick_count}")
+            # Save user data to Google Sheets
+            save_user_data_to_google_sheets(user_data[user_id])
 
-if __name__ == "__main__":
-    bot.run()
+            bot.send_photo(chat_id, SUCCESS_IMAGE_URL, caption="Thank you! Your details have been submitted and saved.")
+            user_data.pop(user_id)  # Remove user data from dictionary after submission
+        else:
+            send_invalid_input_message(chat_id)
+            bot.register_next_step_handler(message, get_exness_id)
+
+def send_invalid_input_message(chat_id):
+    bot.send_photo(chat_id, INVALID_INPUT_IMAGE_URL, caption="Invalid input. Please submit the correct information.")
+    bot.send_message(chat_id, "Please try again.")
+
+def save_user_data_to_google_sheets(user_data):
+    try:
+        # Load credentials from the Google Sheets credentials JSON file
+        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+        credentials = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_JSON_PATH, scope)
+        gc = gspread.authorize(credentials)
+
+        # Open the Google Sheets document by title
+        spreadsheet = gc.open("Mikfx Database")
+
+        # Select the first sheet
+        sheet = spreadsheet.get_worksheet(0)
+
+        # Get the next available row
+        next_row = len(sheet.col_values(1)) + 1
+
+        # Write data to Google Sheets
+        sheet.update_cell(next_row, 1, str(datetime.now()))  # Date & time
+        sheet.update_cell(next_row, 2, user_data['name'])  # Name
+        sheet.update_cell(next_row, 3, user_data['username'])  # Username
+        sheet.update_cell(next_row, 4, user_data['user_id'])  # User ID
+        sheet.update_cell(next_row, 5, user_data['mobile_number'])  # Mobile number
+        sheet.update_cell(next_row, 6, user_data['exness_id'])  # Exness ID
+
+    except Exception as e:
+        print(f"Error saving user data to Google Sheets: {e}")
+
+if _name_ == "_main_":
+    bot.polling(none_stop=True)
