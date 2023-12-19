@@ -6,8 +6,11 @@ from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 
 # Get sensitive information from environment variables
-TOKEN = os.environ.get('5999713069:AAFYhnSI-79OCEEsnQL98K581QkUePq6T-8')
-CREDENTIALS_JSON_PATH = os.environ.get('mikfxdatabase-965088f7d3f9.json')
+# TOKEN = os.environ.get('5999713069:AAFYhnSI-79OCEEsnQL98K581QkUePq6T-8')
+# CREDENTIALS_JSON_PATH = os.environ.get('mikfxdatabase-965088f7d3f9.json')
+
+TOKEN = '5999713069:AAFYhnSI-79OCEEsnQL98K581QkUePq6T-8'
+CREDENTIALS_JSON_PATH = 'mikfxdatabase-965088f7d3f9.json'
 
 bot = telebot.TeleBot(TOKEN)
 
