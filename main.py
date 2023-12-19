@@ -6,7 +6,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 
 # Get sensitive information from environment variables
-TOKEN = os.environ.get('BOT_TOKEN')
+TOKEN = os.environ.get('5999713069:AAFYhnSI-79OCEEsnQL98K581QkUePq6T-8')
 CREDENTIALS_JSON_PATH = os.environ.get('GOOGLE_SHEETS_CREDENTIALS_PATH')
 
 bot = telebot.TeleBot(TOKEN)
