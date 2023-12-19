@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "mikfxdatabase",
+  "private_key_id": "965088f7d3f9d81a645ff5aaf304d9907837bf79",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDryNQ1AwhBpoc6\nxl0RnpCWYQrVmG2Ax5lPR4IMsRgTMyOM6HG8iPxI4YkjMam0jg11A+Qipd42sdQH\npiPCDR36HjCK9GYIci4bJb4zOpDoBWutfvzrKUYTAKt8GYeU9mlAykx3Ws3vVN9A\n7HnqvtvPm6wimmtllLh2Im4393rMwgjb/yPi1gc219VD9nJsmXXR/cCZzT2d71Eq\nx1w1KxHQRdTTgqA4YX3VnBi2MrzhhlfVc/CXU3zzXlluv12hFnaRLYjdsCRK7Ual\nFQVz1dw7sjvC4ddlxm3rlRTTqe55R0e/zlnoCbKWbh6aNTskHarEBuqoEhsSildt\nzM/1TA/NAgMBAAECggEAXQtlYn4N1gpnNvRsabWPDSjCY8PBAp7Bix2G3odMHteB\nYeugZmwQUppdybuhYpTkDpc4gcu+wwqtx07ysXMHr1oWgd8sHI0iUKg2RHUKFeV9\ntnt0R0CEXJ9ZDKHudQRASMcMIdV9isKNT0uCWPZ0O5sM9KLHWtCzcjroD8HjfcUa\nXIOeovDc/B9LhQqLp19Roqs6iiwDEsHB3NoAmXAIVwGbuRzVkj+zAAdwzbhm5kBW\nhb3pVF1R53li9SFPN4CrQvlqQyK6MjsWZTBGpTSRxCmkh7jxjPwyakeW1hpBbCpX\n//r3+urmpkjZ959fwFhAeHDbusv9s+F9PmdadggpqQKBgQD3rTsyfVRciVw9GaNj\nWLLqq4KXsJVyfeg1q2pyHixWTLEoN94aY88XKzZSq7HOC6tpZ9frwo2BcPsSffdR\nBBC8AQbU2j09mrdD/G1TXtQk/T2+cq+R2bVl+mxb/bHy/7w2wKomozFe1hqtu9vc\nSwheZf7578btrmLmdMN2aI1EMwKBgQDztUnwqJCxk8NiHXmtPWfy98pRTblLroVo\nmjCS3jrMyW0r1rFYPv1z881JL+22pNgr/0tLWMGQoprsXMYGyO8h46FL0HsGUKf1\nO8NGaMHmMjTQcuL4dPIX+SMq7mNJ8owTDWfePYLiy6Kbr4PXk0H+JBc44oEj2aPH\nDYprkk1b/wKBgQCWjyDgNV22Du4aWl5/QukoTHBLg9WlTrJ9BaHkk0ECiQZcW3HR\newDlpagVIzgn9+IQZkbUk2Tv3d1SRW61OhJuJvWfKLd3nnhvhKB0wL2XarZA8niV\n4dEql8uNNDAbdqhUZFRKvoOBkgePuxYQ2S/SKpCQINk9nPeT/kDf1vihDwKBgDa0\ncAeEXw5tY8NHaIO5r/a7Jn//mWNipnGngtXE6qADau0XQTHU2eHITUFrb8m60Qd3\nQ/iC0Nhdl7cM0Cq/ueX6ib9R6fut6TXEF35bj4LTrEVKNKae4aT9+KXvYvw7ZLP2\nI2Wgmxu7qCGYUVj3pi2c/lV3ipN4jCnnYTXqXlETAoGAR/U6qNUL3yJCE1YQ78WB\nT4HIRGMw1OLCA7E/vjsRrN+RRasWPGo+O8BKa42EDGULuJM7R0+t6nuqSEhoK0pQ\nILZ4rxEXm5Dv1ztBSAXrP6IUEM7B9/zWLdIad1WTb3iUCeArDdOvweFtsx25WibL\nAjjDDbqX/+VFsfC9fApUK1o=\n-----END PRIVATE KEY-----\n",
+  "client_email": "mikfxdatabase@mikfxdatabase.iam.gserviceaccount.com",
+  "client_id": "105558559151481670337",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/mikfxdatabase%40mikfxdatabase.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
